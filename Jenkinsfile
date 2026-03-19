@@ -37,19 +37,17 @@ pipeline {
         }
 
         stage('Publish Report') {
-            steps {
-                echo '📊 Publicando reporte...'
+             steps {
                 publishHTML(target: [
-                    reportDir: 'playwright-report',
-                    reportFiles: 'index.html',
-                    reportName: 'Playwright Report',
-                    keepAll: true,
-                    alwaysLinkToLastBuild: true,
-                    allowMissing: false
-                ])
-            }
-        }
+                reportDir: 'playwright-report',
+                reportFiles: 'index.html',
+                reportName: 'Playwright Report',
+                keepAll: true,                  // 🔥 guarda histórico
+                alwaysLinkToLastBuild: true,   // 🔥 link al último
+                allowMissing: false
+        ])
     }
+}
 
     post {
         always {
