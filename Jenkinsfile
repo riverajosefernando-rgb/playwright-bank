@@ -32,22 +32,31 @@ pipeline {
         stage('Run Tests') {
             steps {
                 echo '🧪 Ejecutando pruebas...'
-                bat 'cmd /c "npx.cmd playwright test --reporter=html"'
+                bat 'cmd /c "npx.cmd playwright test"'
+            }
+        }
+
+        stage('Verify Report') {
+            steps {
+                echo '🔍 Verificando reporte...'
+                bat 'dir playwright-report'
             }
         }
 
         stage('Publish Report') {
-             steps {
+            steps {
+                echo '📊 Publicando reporte...'
                 publishHTML(target: [
-                reportDir: 'playwright-report',
-                reportFiles: 'index.html',
-                reportName: 'Playwright Report',
-                keepAll: true,                  // 🔥 guarda histórico
-                alwaysLinkToLastBuild: true,   // 🔥 link al último
-                allowMissing: false
-        ])
+                    reportDir: 'playwright-report',
+                    reportFiles: 'index.html',
+                    reportName: 'Playwright Report',
+                    keepAll: true,
+                    alwaysLinkToLastBuild: true,
+                    allowMissing: false
+                ])
+            }
+        }
     }
-}
 
     post {
         always {
