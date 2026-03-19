@@ -1,7 +1,7 @@
 import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
-  globalSetup: './utils/global-setup.ts', // 👈 NUEVO (WireMock auto start)
+  globalSetup: './utils/global-setup.ts',
 
   testDir: './tests',
 
@@ -10,14 +10,19 @@ export default defineConfig({
 
   reporter: [
     ['list'],
-    ['html']
+    ['html', { 
+      open: 'never',
+      outputFolder: 'playwright-report'
+    }]
   ],
 
   use: {
-    baseURL: 'https://www.saucedemo.com', // 👈 SOLO UI
+    baseURL: 'https://www.saucedemo.com',
     headless: true,
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
     trace: 'on-first-retry'
-  }
+  },
+
+  outputDir: 'test-results', // 🔥 importante para Jenkins
 });
