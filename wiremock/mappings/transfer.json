@@ -1,0 +1,16 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/api/transfer"
+  },
+  "response": {
+    "status": 201,
+    "jsonBody": {
+      "message": "Transfer successful",
+      "transactionId": "TX123456"
+    },
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}

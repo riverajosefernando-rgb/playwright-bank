@@ -1,0 +1,15 @@
+{
+  "request": {
+    "method": "POST",
+    "url": "/api/login"
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "token": "fake-token-123"
+    },
+    "headers": {
+      "Content-Type": "application/json"
+    }
+  }
+}
