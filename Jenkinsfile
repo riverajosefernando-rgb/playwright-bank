@@ -43,9 +43,9 @@ pipeline {
             }
         }
 
-        stage('Publish Report') {
+        stage('Publish Report (Jenkins)') {
             steps {
-                echo '📊 Publicando reporte...'
+                echo '📊 Publicando reporte en Jenkins...'
                 publishHTML(target: [
                     reportDir: 'playwright-report',
                     reportFiles: 'index.html',
@@ -56,6 +56,16 @@ pipeline {
                 ])
             }
         }
+
+        stage('Serve Report (HTTP)') {
+            steps {
+                echo '🌐 Levantando servidor local para reporte...'
+                bat '''
+                start cmd /c "npx.cmd http-server playwright-report -p 8081"
+                timeout /t 5
+                '''
+            }
+        }
     }
 
     post {
@@ -64,6 +74,7 @@ pipeline {
         }
         success {
             echo '✅ Tests OK'
+            echo '🌐 Abre el reporte en: http://localhost:8081'
         }
         failure {
             echo '❌ Fallaron tests'
