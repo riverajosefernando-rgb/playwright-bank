@@ -2,11 +2,12 @@ pipeline {
     agent any
 
     parameters {
-        choice(name: 'ENV_TYPE', choices: ['mock', 'real'], description: 'Selecciona si usar WireMock o API real')
+        choice(name: 'ENV_TYPE', choices: ['mock', 'real'], description: 'Selecciona mock o API real')
     }
 
     environment {
         WIREMOCK_PORT = '9090'
+        CONTAINER_NAME = 'wiremock-bank'
     }
 
     stages {
@@ -32,14 +33,21 @@ pipeline {
             }
         }
 
-        stage('Start WireMock (if needed)') {
+        stage('Start WireMock (Docker)') {
             when {
                 expression { params.ENV_TYPE == 'mock' }
             }
             steps {
-                echo '🧩 Iniciando WireMock...'
+                echo '🐳 Iniciando WireMock en Docker...'
+
                 bat """
-                start /B java -jar wiremock-standalone.jar --port %WIREMOCK_PORT%
+                docker rm -f %CONTAINER_NAME% 2>nul
+
+                docker run -d --name %CONTAINER_NAME% ^
+                  -p %WIREMOCK_PORT%:8080 ^
+                  -v %cd%\\wiremock:/home/wiremock ^
+                  wiremock/wiremock:latest
+
                 timeout /t 5
                 """
             }
@@ -59,9 +67,9 @@ pipeline {
             }
         }
 
-        stage('Generate Allure Report') {
+        stage('Allure Report') {
             steps {
-                echo '📊 Generando resultados Allure...'
+                echo '📊 Generando reporte Allure...'
                 allure([
                     includeProperties: false,
                     jdk: '',
@@ -69,19 +77,16 @@ pipeline {
                 ])
             }
         }
-
     }
 
     post {
         always {
-            echo '🧹 Deteniendo WireMock si está activo...'
+            echo '🧹 Eliminando contenedor WireMock...'
 
-            // Mata proceso de WireMock
             bat """
-            for /f "tokens=5" %%a in ('netstat -aon ^| findstr :%WIREMOCK_PORT%') do taskkill /F /PID %%a
+            docker rm -f %CONTAINER_NAME% 2>nul
             """
 
-            echo '🧽 Limpieza finalizada'
             echo '🏁 Pipeline finalizado'
         }
 
