@@ -1,8 +1,11 @@
-pipeline {
+pipeline { 
     agent any
 
+    parameters {
+        choice(name: 'ENV_TYPE', choices: ['mock', 'real'], description: 'Selecciona si usar WireMock o API real')
+    }
+
     environment {
-        USE_MOCK = 'true'
         WIREMOCK_PORT = '9090'
     }
 
@@ -29,30 +32,40 @@ pipeline {
             }
         }
 
+        stage('Start WireMock (if needed)') {
+            when {
+                expression { params.ENV_TYPE == 'mock' }
+            }
+            steps {
+                echo '🧩 Iniciando WireMock...'
+                bat """
+                start /B java -jar wiremock-standalone.jar --port %WIREMOCK_PORT%
+                timeout /t 5
+                """
+            }
+        }
+
         stage('Run Tests') {
             steps {
-                echo '🧪 Ejecutando pruebas...'
-                bat 'cmd /c "npx.cmd playwright test"'
+                echo "🧪 Ejecutando pruebas en modo: ${params.ENV_TYPE}"
+
+                script {
+                    if (params.ENV_TYPE == 'mock') {
+                        bat 'cmd /c "set BASE_URL=http://localhost:%WIREMOCK_PORT% && npx.cmd playwright test"'
+                    } else {
+                        bat 'cmd /c "set BASE_URL=https://api.realbank.com && npx.cmd playwright test"'
+                    }
+                }
             }
         }
 
-        stage('Verify Report') {
+        stage('Generate Allure Report') {
             steps {
-                echo '🔍 Verificando reporte...'
-                bat 'dir playwright-report'
-            }
-        }
-
-        stage('Publish Report (Jenkins)') {
-            steps {
-                echo '📊 Publicando reporte en Jenkins...'
-                publishHTML(target: [
-                    reportDir: 'playwright-report',
-                    reportFiles: 'index.html',
-                    reportName: 'Playwright Report',
-                    keepAll: true,
-                    alwaysLinkToLastBuild: true,
-                    allowMissing: false
+                echo '📊 Generando resultados Allure...'
+                allure([
+                    includeProperties: false,
+                    jdk: '',
+                    results: [[path: 'allure-results']]
                 ])
             }
         }
@@ -61,12 +74,21 @@ pipeline {
 
     post {
         always {
+            echo '🧹 Deteniendo WireMock si está activo...'
+
+            // Mata proceso de WireMock
+            bat """
+            for /f "tokens=5" %%a in ('netstat -aon ^| findstr :%WIREMOCK_PORT%') do taskkill /F /PID %%a
+            """
+
+            echo '🧽 Limpieza finalizada'
             echo '🏁 Pipeline finalizado'
         }
+
         success {
             echo '✅ Tests OK'
-            echo '🌐 Ver reporte completo en: http://localhost:8081'
         }
+
         failure {
             echo '❌ Fallaron tests o pipeline'
         }
