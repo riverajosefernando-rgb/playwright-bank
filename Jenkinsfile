@@ -1,6 +1,10 @@
 pipeline { 
     agent any
 
+    options {
+        skipDefaultCheckout(true)
+    }
+
     parameters {
         choice(name: 'ENV_TYPE', choices: ['mock', 'real'], description: 'mock o real')
         choice(name: 'TEST_ENV', choices: ['DEV', 'QA', 'PROD'], description: 'Ambiente')
@@ -15,21 +19,25 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                echo '📥 Clonando repositorio...'
+                deleteDir()
                 checkout scm
+            }
+        }
+
+        stage('Debug Jenkinsfile') {
+            steps {
+                echo '🔥 VERSION NUEVA SIN TIMEOUT 🔥'
             }
         }
 
         stage('Install Dependencies') {
             steps {
-                echo '📦 Instalando dependencias...'
                 bat 'cmd /c "npm.cmd install"'
             }
         }
 
         stage('Install Playwright Browsers') {
             steps {
-                echo '🌐 Instalando navegadores...'
                 bat 'cmd /c "npx.cmd playwright install"'
             }
         }
@@ -39,8 +47,6 @@ pipeline {
                 expression { params.ENV_TYPE == 'mock' }
             }
             steps {
-                echo '🐳 Iniciando WireMock...'
-
                 bat """
                 docker rm -f %CONTAINER_NAME% 2>nul
 
@@ -85,8 +91,6 @@ pipeline {
 
         stage('Run Tests') {
             steps {
-                echo "🧪 Ejecutando: ${params.ENV_TYPE} - ${params.TEST_ENV}"
-
                 bat """
                 set ENV_TYPE=${params.ENV_TYPE}
                 set TEST_ENV=${params.TEST_ENV}
@@ -98,7 +102,6 @@ pipeline {
 
         stage('Allure Report') {
             steps {
-                echo '📊 Generando Allure...'
                 allure([
                     includeProperties: false,
                     jdk: '',
@@ -110,16 +113,7 @@ pipeline {
 
     post {
         always {
-            echo '🧹 Eliminando WireMock...'
             bat "docker rm -f %CONTAINER_NAME% 2>nul"
-        }
-
-        success {
-            echo '✅ Todo OK'
-        }
-
-        failure {
-            echo '❌ Falló pipeline'
         }
     }
 }
