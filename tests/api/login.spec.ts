@@ -2,8 +2,6 @@ import { test, expect, APIResponse } from '@playwright/test';
 import { BASE_URL, CURRENT_CONFIG } from '../../utils/config';
 import { loadMocks, resetMocks } from '../../utils/wiremockClient';
 
-const allure = require('allure-js-commons'); // 👈 FIX
-
 test.beforeEach(async ({ request }) => {
 
   if (CURRENT_CONFIG.USE_MOCK) {
@@ -31,15 +29,16 @@ test('Login API', async ({ request }) => {
   let body: any;
 
   await test.step('Enviar request', async () => {
+
     response = await request.post(`${BASE_URL}/api/login`, {
       data: payload
     });
 
-    allure.attachment(
-      'Request',
-      JSON.stringify(payload, null, 2),
-      'application/json'
-    );
+    await test.info().attach('Request', {
+      body: JSON.stringify(payload, null, 2),
+      contentType: 'application/json'
+    });
+
   });
 
   await test.step('Validar status', async () => {
@@ -47,13 +46,14 @@ test('Login API', async ({ request }) => {
   });
 
   await test.step('Leer response', async () => {
+
     body = await response.json();
 
-    allure.attachment(
-      'Response',
-      JSON.stringify(body, null, 2),
-      'application/json'
-    );
+    await test.info().attach('Response', {
+      body: JSON.stringify(body, null, 2),
+      contentType: 'application/json'
+    });
+
   });
 
   await test.step('Validar token', async () => {
