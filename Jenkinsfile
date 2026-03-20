@@ -57,15 +57,6 @@ pipeline {
             }
         }
 
-        stage('Serve Report (HTTP FIX)') {
-            steps {
-                echo '🌐 Levantando servidor local para evitar pantalla negra...'
-                bat '''
-                start "" cmd /c "npx.cmd http-server playwright-report -p 8081"
-                ping 127.0.0.1 -n 3 > nul
-                '''
-            }
-        }
     }
 
     post {
