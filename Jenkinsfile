@@ -2,7 +2,8 @@ pipeline {
     agent any
 
     parameters {
-        choice(name: 'ENV_TYPE', choices: ['mock', 'real'], description: 'Selecciona mock o API real')
+        choice(name: 'ENV_TYPE', choices: ['mock', 'real'], description: 'mock o real')
+        choice(name: 'TEST_ENV', choices: ['DEV', 'QA', 'PROD'], description: 'Ambiente')
     }
 
     environment {
@@ -38,7 +39,7 @@ pipeline {
                 expression { params.ENV_TYPE == 'mock' }
             }
             steps {
-                echo '🐳 Iniciando WireMock en Docker...'
+                echo '🐳 Iniciando WireMock...'
 
                 bat """
                 docker rm -f %CONTAINER_NAME% 2>nul
@@ -47,29 +48,57 @@ pipeline {
                   -p %WIREMOCK_PORT%:8080 ^
                   -v %cd%\\wiremock:/home/wiremock ^
                   wiremock/wiremock:latest
-
-                timeout /t 5
                 """
             }
         }
 
-        stage('Run Tests') {
+        stage('Wait for WireMock') {
+            when {
+                expression { params.ENV_TYPE == 'mock' }
+            }
             steps {
-                echo "🧪 Ejecutando pruebas en modo: ${params.ENV_TYPE}"
-
                 script {
-                    if (params.ENV_TYPE == 'mock') {
-                        bat 'cmd /c "set BASE_URL=http://localhost:%WIREMOCK_PORT% && npx.cmd playwright test"'
-                    } else {
-                        bat 'cmd /c "set BASE_URL=https://api.realbank.com && npx.cmd playwright test"'
+                    def retries = 10
+                    def up = false
+
+                    for (int i = 0; i < retries; i++) {
+                        def status = bat(
+                            script: "curl -s http://localhost:%WIREMOCK_PORT%/__admin",
+                            returnStatus: true
+                        )
+
+                        if (status == 0) {
+                            echo '✅ WireMock listo'
+                            up = true
+                            break
+                        }
+
+                        sleep 2
+                    }
+
+                    if (!up) {
+                        error("❌ WireMock no levantó")
                     }
                 }
             }
         }
 
+        stage('Run Tests') {
+            steps {
+                echo "🧪 Ejecutando: ${params.ENV_TYPE} - ${params.TEST_ENV}"
+
+                bat """
+                set ENV_TYPE=${params.ENV_TYPE}
+                set TEST_ENV=${params.TEST_ENV}
+                set WIREMOCK_PORT=%WIREMOCK_PORT%
+                npx.cmd playwright test
+                """
+            }
+        }
+
         stage('Allure Report') {
             steps {
-                echo '📊 Generando reporte Allure...'
+                echo '📊 Generando Allure...'
                 allure([
                     includeProperties: false,
                     jdk: '',
@@ -81,21 +110,16 @@ pipeline {
 
     post {
         always {
-            echo '🧹 Eliminando contenedor WireMock...'
-
-            bat """
-            docker rm -f %CONTAINER_NAME% 2>nul
-            """
-
-            echo '🏁 Pipeline finalizado'
+            echo '🧹 Eliminando WireMock...'
+            bat "docker rm -f %CONTAINER_NAME% 2>nul"
         }
 
         success {
-            echo '✅ Tests OK'
+            echo '✅ Todo OK'
         }
 
         failure {
-            echo '❌ Fallaron tests o pipeline'
+            echo '❌ Falló pipeline'
         }
     }
 }
