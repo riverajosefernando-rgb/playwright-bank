@@ -1,62 +1,62 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, APIResponse } from '@playwright/test';
 import { BASE_URL, CURRENT_CONFIG } from '../../utils/config';
 import { loadMocks, resetMocks } from '../../utils/wiremockClient';
-import { step, attachment } from 'allure-js-commons';
+
+const allure = require('allure-js-commons'); // 👈 FIX
 
 test.beforeEach(async ({ request }) => {
+
   if (CURRENT_CONFIG.USE_MOCK) {
-    await step('Resetear mocks', async () => {
+
+    await test.step('Resetear mocks', async () => {
       await resetMocks(request);
     });
 
-    await step('Cargar mocks', async () => {
+    await test.step('Cargar mocks', async () => {
       await loadMocks(request);
     });
+
   }
+
 });
 
 test('Login API', async ({ request }) => {
 
-  console.log('CONFIG:', CURRENT_CONFIG);
+  const payload = {
+    email: 'test@test.com',
+    password: '1234'
+  };
 
-  let response;
-  let body;
+  let response: APIResponse;
+  let body: any;
 
-  await step('Enviar request de login', async () => {
+  await test.step('Enviar request', async () => {
     response = await request.post(`${BASE_URL}/api/login`, {
-      data: {
-        email: 'test@test.com',
-        password: '1234'
-      }
+      data: payload
     });
 
-    // 📎 Adjuntar request
-    attachment(
-      'Request Payload',
-      JSON.stringify({
-        email: 'test@test.com',
-        password: '1234'
-      }, null, 2),
+    allure.attachment(
+      'Request',
+      JSON.stringify(payload, null, 2),
       'application/json'
     );
   });
 
-  await step('Validar status code', async () => {
+  await test.step('Validar status', async () => {
     expect(response.status()).toBe(200);
   });
 
-  await step('Leer response body', async () => {
+  await test.step('Leer response', async () => {
     body = await response.json();
 
-    // 📎 Adjuntar response
-    attachment(
-      'Response Body',
+    allure.attachment(
+      'Response',
       JSON.stringify(body, null, 2),
       'application/json'
     );
   });
 
-  await step('Validar token en respuesta', async () => {
+  await test.step('Validar token', async () => {
     expect(body).toHaveProperty('token');
   });
 
