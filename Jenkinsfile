@@ -26,7 +26,7 @@ pipeline {
 
         stage('Debug Jenkinsfile') {
             steps {
-                echo '🔥 VERSION NUEVA SIN TIMEOUT 🔥'
+                echo ' VERSION NUEVA SIN TIMEOUT '
             }
         }
 
@@ -74,7 +74,7 @@ pipeline {
                         )
 
                         if (status == 0) {
-                            echo '✅ WireMock listo'
+                            echo 'WireMock listo'
                             up = true
                             break
                         }
@@ -83,7 +83,7 @@ pipeline {
                     }
 
                     if (!up) {
-                        error("❌ WireMock no levantó")
+                        error("WireMock no levantó")
                     }
                 }
             }
