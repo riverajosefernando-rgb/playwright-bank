@@ -13,8 +13,9 @@ export default defineConfig({
     ['html', { 
       open: 'never',
       outputFolder: 'playwright-report'
-    }]
-  ],
+    }],
+    ['allure-playwright']
+],
 
   use: {
     baseURL: 'https://www.saucedemo.com',
