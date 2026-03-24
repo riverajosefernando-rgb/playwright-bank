@@ -1,8 +1,8 @@
 import path from 'path';
 
 // 🔥 1. Leer variables desde Jenkins / entorno
-const ENV = process.env.TEST_ENV || 'DEV'; // DEV | QA | PROD
-const USE_MOCK = process.env.ENV_TYPE === 'mock';
+export const ENV = process.env.TEST_ENV || 'DEV'; // DEV | QA | PROD
+export const USE_MOCK = process.env.ENV_TYPE === 'mock';
 
 // 🔌 2. Configuración WireMock
 export const WIREMOCK_PORT = process.env.WIREMOCK_PORT || '9090';

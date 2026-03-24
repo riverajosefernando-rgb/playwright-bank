@@ -1,0 +1,1 @@
+🌍 CONFIG: { ENV: 'DEV', USE_MOCK: false, BASE_URL: 'https://dev-api.bank.com' }

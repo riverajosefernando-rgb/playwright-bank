@@ -1,0 +1,1 @@
+🌍 CONFIG: { ENV: 'DEV', USE_MOCK: true, BASE_URL: 'http://localhost:9090' }
